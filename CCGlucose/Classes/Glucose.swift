@@ -13,7 +13,7 @@ import CCToolbox
 
 var thisGlucose : Glucose?
 
-public enum transferError : Int {
+@objc public enum transferError : Int {
     case reserved = 0,
     success,
     opCodeNotSupported,
@@ -52,7 +52,7 @@ public enum transferError : Int {
     
 }
 
-public protocol GlucoseProtocol {
+@objc public protocol GlucoseProtocol {
     func numberOfStoredRecords(number: UInt16)
     func glucoseMeasurement(measurement:GlucoseMeasurement)
     func glucoseMeasurementContext(measurementContext:GlucoseMeasurementContext)
@@ -63,13 +63,13 @@ public protocol GlucoseProtocol {
     func glucoseError(error: NSError)
 }
 
-public protocol GlucoseMeterDiscoveryProtocol {
+@objc public protocol GlucoseMeterDiscoveryProtocol {
     func glucoseMeterDiscovered(glucoseMeter:CBPeripheral)
 }
 
 public class Glucose : NSObject {
-    public var glucoseDelegate : GlucoseProtocol?
-    public var glucoseMeterDiscoveryDelegate: GlucoseMeterDiscoveryProtocol?
+    public weak var glucoseDelegate : GlucoseProtocol?
+    public weak var glucoseMeterDiscoveryDelegate: GlucoseMeterDiscoveryProtocol?
     var peripheral : CBPeripheral? {
         didSet {
             if (peripheral != nil) { // don't wipe the UUID when we disconnect and clear the peripheral
@@ -79,6 +79,8 @@ public class Glucose : NSObject {
         }
     }
     
+    //public var serviceUUIDString:String = "1809"
+    //ana change for thermometer is 1809
     public var serviceUUIDString:String = "1808"
     public var autoEnableNotifications:Bool = true
     public var allowDuplicates:Bool = false
@@ -97,6 +99,31 @@ public class Glucose : NSObject {
     public internal(set) var firmwareVersion : String?
     public internal(set) var softwareVersion : String?
     public internal(set) var hardwareVersion : String?
+    
+    public internal(set) var systemID : String? //Ana added this
+    public internal(set) var hardwareRevision : String? //Ana added this
+    public internal(set) var softwareRevision : String? //Ana added this
+    public internal(set) var firmwareRevision : String? //Ana added this
+    public internal(set) var partNumber: String? //Ana added this
+    public internal(set) var protocolProdSpec: String? //Ana added this
+    public internal(set) var gmdn: String? //Ana added this
+    public internal(set) var unspecified: String? //Ana added this
+    
+    public internal(set) var regCertDataList : NSData? //Ana added this
+    public internal(set) var dateTimeValue : String? //Ana added this
+    public internal(set) var currentSensorDateTime : Date? //Ana added this
+    
+    public internal(set) var continuaVersion : UInt32? //Ana added this
+    public internal(set) var majorVersion : UInt32? //Ana added this
+    public internal(set) var minorVersion : UInt32? //Ana added this
+    public internal(set) var certDeviceCount : UInt32? //Ana added this
+    public internal(set) var certDeviceClass: Int? //Ana added this
+    public internal(set) var regStatusAuthBody: UInt32? //Ana added this
+    public internal(set) var regStatusBit: UInt32? //Ana added this
+    
+    public internal(set) var tCode:Int = 4 //Ana added this
+    
+    public var sensorCurrentTime: NSData?  //Ana added this
     
     public class func sharedInstance() -> Glucose {
         if thisGlucose == nil {
@@ -134,6 +161,8 @@ public class Glucose : NSObject {
     }
     
     func configureBluetoothParameters() {
+        //Bluetooth.sharedInstance().serviceUUIDString = "1809"
+        //ana change for thermometer is 1809
         Bluetooth.sharedInstance().serviceUUIDString = "1808"
         Bluetooth.sharedInstance().allowDuplicates = false
         Bluetooth.sharedInstance().autoEnableNotifications = true // FIXME: should be configured or use delegate, not both
@@ -142,7 +171,7 @@ public class Glucose : NSObject {
         Bluetooth.sharedInstance().bluetoothServiceDelegate = self
         Bluetooth.sharedInstance().bluetoothCharacteristicDelegate = self
     }
-
+    
     public func connectToGlucoseMeter(glucoseMeter: CBPeripheral) {
         //self.peripheral = glucoseMeter
         Bluetooth.sharedInstance().stopScanning()
@@ -192,10 +221,10 @@ public class Glucose : NSObject {
                 let transferErrorString = transferError(rawValue: responseStatusInt!)?.description
                 
                 let userInfo: [NSObject : AnyObject] =
-                [
-                    NSLocalizedDescriptionKey as NSObject :  NSLocalizedString("Transfer Error", value: transferErrorString!, comment: "") as AnyObject,
-                ]
-                let err = NSError(domain: "CCGlucose", code: responseStatusInt!, userInfo: (userInfo as! [String : Any]))
+                    [
+                        NSLocalizedDescriptionKey as NSObject :  NSLocalizedString("Transfer Error", value: transferErrorString!, comment: "") as AnyObject,
+                        ]
+                let err = NSError(domain: "CCGlucose", code: responseStatusInt!, userInfo: userInfo)
                 glucoseDelegate?.glucoseMeterDidTransferMeasurements(error: err)
             }
         }
@@ -245,10 +274,10 @@ public class Glucose : NSObject {
         let recordNumberHex = String(recordNumberData.toHexString())
         
         let command = commandPrefix +
-            (recordNumberHex.subStringWithRange(0, to: 2)) +
-            (recordNumberHex.subStringWithRange(2, to: 4)) +
-            (recordNumberHex.subStringWithRange(0, to: 2)) +
-            (recordNumberHex.subStringWithRange(2, to: 4))
+            (recordNumberHex?.subStringWithRange(0, to: 2))! +
+            (recordNumberHex?.subStringWithRange(2, to: 4))! +
+            (recordNumberHex?.subStringWithRange(0, to: 2))! +
+            (recordNumberHex?.subStringWithRange(2, to: 4))!
         
         print("command: \(command)")
         let commandData = command.dataFromHexadecimalString()
@@ -268,10 +297,10 @@ public class Glucose : NSObject {
         let recordNumberToHex = String(recordNumberToData.toHexString())
         
         let command = commandPrefix +
-            (recordNumberFromHex.subStringWithRange(0, to: 2)) +
-            (recordNumberFromHex.subStringWithRange(2, to: 4)) +
-            (recordNumberToHex.subStringWithRange(0, to: 2)) +
-            (recordNumberToHex.subStringWithRange(2, to: 4))
+            (recordNumberFromHex?.subStringWithRange(0, to: 2))! +
+            (recordNumberFromHex?.subStringWithRange(2, to: 4))! +
+            (recordNumberToHex?.subStringWithRange(0, to: 2))! +
+            (recordNumberToHex?.subStringWithRange(2, to: 4))!
         
         print("command: \(command)")
         let commandData = command.dataFromHexadecimalString()
@@ -287,9 +316,9 @@ public class Glucose : NSObject {
         let recordNumberHex = String(recordNumberData.toHexString())
         
         let command = commandPrefix +
-            (recordNumberHex.subStringWithRange(0, to: 2)) +
-            (recordNumberHex.subStringWithRange(2, to: 4))
-
+            (recordNumberHex?.subStringWithRange(0, to: 2))! +
+            (recordNumberHex?.subStringWithRange(2, to: 4))!
+        
         print("command: \(command)")
         let commandData = command.dataFromHexadecimalString()
         if let peripheral = self.peripheral {
@@ -304,8 +333,8 @@ public class Glucose : NSObject {
         let recordNumberHex = String(recordNumberData.toHexString())
         
         let command = commandPrefix +
-            (recordNumberHex.subStringWithRange(0, to: 2)) +
-            (recordNumberHex.subStringWithRange(2, to: 4))
+            (recordNumberHex?.subStringWithRange(0, to: 2))! +
+            (recordNumberHex?.subStringWithRange(2, to: 4))!
         
         print("command: \(command)")
         let commandData = command.dataFromHexadecimalString()
@@ -337,6 +366,125 @@ public class Glucose : NSObject {
         if let peripheral = self.peripheral {
             Bluetooth.sharedInstance().readCharacteristic(peripheral.findCharacteristicByUUID(glucoseFeatureCharacteristic)!)
         }
+    }
+    
+    //Ana created this function
+    public func parseReqCertInfo() {
+        let certInfo = self.regCertDataList
+        var value: UInt32 = 0
+        var valueHex: UInt64 = 0
+        var indexCounter = 4
+        
+        
+        //Continua version
+        let counterCertInfo = certInfo?.dataRange(indexCounter, Length: 1)
+        counterCertInfo?.getBytes(&value, length: 1)
+        self.continuaVersion = UInt32(value)
+        indexCounter += 4
+        print("continua version \(String(describing: continuaVersion))")
+        
+        //major version
+        let counterMajorVersion = certInfo?.dataRange(indexCounter, Length: 1)
+        counterMajorVersion?.getBytes(&value, length: 1)
+        self.majorVersion = UInt32(value)
+        indexCounter += 1
+        print("major version \(String(describing: majorVersion))")
+        
+        //minor version
+        let counterMinorVersion = certInfo?.dataRange(indexCounter, Length: 1)
+        counterMinorVersion?.getBytes(&value, length: 1)
+        self.minorVersion = UInt32(value)
+        indexCounter += 2
+        print("minor version \(String(describing: minorVersion))")
+        
+        //certified device list count
+        let counterCertDeviceCount = certInfo?.dataRange(indexCounter, Length: 1)
+        counterCertDeviceCount?.getBytes(&value, length: 1)
+        self.certDeviceCount = UInt32(value)
+        indexCounter += 3
+        print("certified device list count \(String(describing: certDeviceCount))")
+        
+        //certified device class
+        let counterCertDeviceClass = certInfo?.dataRange(indexCounter, Length: 2)
+        
+        var pom: String = String(describing: counterCertDeviceClass!)
+        pom = pom.replacingOccurrences(of: "<", with: "")
+        pom = pom.replacingOccurrences(of: ">", with: "")
+        self.certDeviceClass = Int(pom, radix: 16)!
+        indexCounter += 2
+        print("certified device class \(String(describing: certDeviceClass))")
+        
+        //regulation status auth-body
+        let counterRegStatusAuthBody = certInfo?.dataRange(indexCounter, Length: 1)
+        counterRegStatusAuthBody?.getBytes(&value, length: 1)
+        self.regStatusAuthBody = UInt32(value)
+        indexCounter += 5
+        print("reg status auth-body \(String(describing: regStatusAuthBody))")
+        
+        //regulation status bit set
+        let counterRegStatusBit = certInfo?.dataRange(indexCounter, Length: 1)
+        counterRegStatusBit?.getBytes(&value, length: 1)
+        self.regStatusBit = UInt32(value)
+        print("reg status auth-body \(String(describing: regStatusBit))")
+        
+    }
+    
+    //Ana created this function
+    public func parseDateTime() {
+        let data = self.sensorCurrentTime
+        
+        var indexCounter = 0
+        print("parseDateTime [indexCounter:\(indexCounter)]")
+        
+        let calendar = Calendar(identifier: Calendar.Identifier.gregorian)
+        let dateComponents = NSDateComponents()
+        
+        let yearData = data?.dataRange(indexCounter, Length: 2)
+        print("yearData: \(String(describing: yearData))")
+        let swappedYearData = yearData?.swapUInt16Data()
+        
+        swappedYearData?.shortFloatToFloat()
+        print("swappedYearData: \(String(describing: swappedYearData))")
+        
+        let swappedYearString = swappedYearData?.toHexString()
+        dateComponents.year = Int(strtoul(swappedYearString, nil, 16))
+        indexCounter += 2
+        
+        // Month
+        let monthData = data?.dataRange(indexCounter, Length: 1)
+        print("monthData: \(String(describing: monthData))")
+        dateComponents.month = Int(strtoul(monthData?.toHexString(), nil, 16))
+        indexCounter += 1
+        
+        // Day
+        let dayData = data?.dataRange(indexCounter, Length: 1)
+        print("dayData: \(String(describing: dayData))")
+        dateComponents.day = Int(strtoul(dayData?.toHexString(), nil, 16))
+        indexCounter += 1
+        
+        // Hours
+        let hoursData = data?.dataRange(indexCounter, Length: 1)
+        print("hoursData: \(String(describing: hoursData))")
+        dateComponents.hour = Int(strtoul(hoursData?.toHexString(), nil, 16))
+        indexCounter += 1
+        
+        // Minutes
+        let minutesData = data?.dataRange(indexCounter, Length: 1)
+        print("minutesData: \(String(describing: minutesData))")
+        dateComponents.minute = Int(strtoul(minutesData?.toHexString(), nil, 16))
+        indexCounter += 1
+        
+        // Seconds
+        let secondsData = data?.dataRange(indexCounter, Length: 1)
+        print("secondsData: \(String(describing: secondsData))")
+        dateComponents.second = Int(strtoul(secondsData?.toHexString(), nil, 16))
+        indexCounter += 1
+        
+        print("dateComponents: \(dateComponents)")
+        
+        let measurementDate = calendar.date(from: dateComponents as DateComponents)
+        print("measurementDateAna: \(String(describing: measurementDate))")
+        self.currentSensorDateTime = measurementDate
     }
 }
 
@@ -402,17 +550,15 @@ extension Glucose: BluetoothServiceProtocol {
     public func didDiscoverServices(_ services: [CBService]) {
         print("Glucose#didDiscoverServices - \(services)")
     }
-
+    
     public func didDiscoverServiceWithCharacteristics(_ service:CBService) {
         print("didDiscoverServiceWithCharacteristics - \(service.uuid.uuidString)")
         servicesAndCharacteristics[service.uuid.uuidString] = service.characteristics
         
         for characteristic in service.characteristics! {
-            if characteristic.properties.contains(CBCharacteristicProperties.read) {
-                print("reading \(characteristic.uuid.uuidString)")
-                DispatchQueue.global(qos: .background).async {
-                    self.peripheral?.readValue(for: characteristic)
-                }
+            print("reading \(characteristic.uuid.uuidString)")
+            DispatchQueue.global(qos: .background).async {
+                self.peripheral?.readValue(for: characteristic)
             }
         }
     }
@@ -420,7 +566,7 @@ extension Glucose: BluetoothServiceProtocol {
 
 extension Glucose: BluetoothCharacteristicProtocol {
     public func didUpdateValueForCharacteristic(_ cbPeripheral: CBPeripheral, characteristic: CBCharacteristic) {
-       print("Glucose#didUpdateValueForCharacteristic: \(characteristic) value:\(String(describing: characteristic.value))")
+        print("Glucose#didUpdateValueForCharacteristic: \(characteristic) value:\(String(describing: characteristic.value))")
         if(characteristic.uuid.uuidString == glucoseFeatureCharacteristic) {
             self.parseFeaturesResponse(data: characteristic.value! as NSData)
         } else if(characteristic.uuid.uuidString == recordAccessControlPointCharacteristic) {
@@ -439,18 +585,35 @@ extension Glucose: BluetoothCharacteristicProtocol {
             print("modelNumber: \(String(describing: self.modelNumber))")
         } else if (characteristic.uuid.uuidString == "2A25") {
             self.serialNumber = String(data: characteristic.value!, encoding: .utf8)
-            print("serialNumber: \(String(describing: self.serialNumber))")
+            print("serialNumber: \(String(describing: self.serialNumber!))")
         } else if (characteristic.uuid.uuidString == "2A26") {
             self.firmwareVersion = String(data: characteristic.value!, encoding: .utf8)
+            self.firmwareRevision = String(data: characteristic.value!, encoding: .utf8)
             print("firmwareVersion: \(String(describing: self.firmwareVersion))")
+        } else if (characteristic.uuid.uuidString == "2A19") {
+            print("battery level")
         }
         if (characteristic.uuid.uuidString == "2A27") {
             self.hardwareVersion = String(data: characteristic.value!, encoding: .utf8)
+            self.hardwareRevision = String(data: characteristic.value!, encoding: .utf8)
             print("hardwareVersion: \(String(describing: self.hardwareVersion))")
         }
         if (characteristic.uuid.uuidString == "2A28") {
             self.softwareVersion = String(data: characteristic.value!, encoding: .utf8)
+            self.softwareRevision = String(data: characteristic.value!, encoding: .utf8)
             print("softwareVersion: \(String(describing: self.softwareVersion))")
+        }
+        if (characteristic.uuid.uuidString == "2A2A"){
+            self.regCertDataList = characteristic.value! as NSData
+            //print("regCertDataList: \(String(describing: self.regCertDataList))")
+        }
+        if (characteristic.uuid.uuidString == "2A08"){
+            self.sensorCurrentTime = characteristic.value! as NSData
+        }
+        if (characteristic.uuid.uuidString == "2A23") {
+            //self.systemID = String(data: characteristic.value!, encoding: .unicode)
+            self.systemID = "1111111"
+            print("systemID: \(String(describing: self.systemID))")
         }
     }
     

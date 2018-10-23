@@ -140,7 +140,7 @@ public class GlucoseMeasurementContext : NSObject {
     let flagsRange = NSRange(location:0, length: 1)
     let sequenceNumberRange = NSRange(location:1, length: 2)
     
-    var medicationValueUnits: String!
+    public var medicationValueUnits: String! //ana made this public
     
     enum indexOffsets: Int {
         case flags = 0,

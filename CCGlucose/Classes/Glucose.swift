@@ -161,9 +161,6 @@ public class Glucose : NSObject {
     }
     
     func configureBluetoothParameters() {
-        //Bluetooth.sharedInstance().serviceUUIDString = "1809"
-        //ana change for thermometer is 1809
-        Bluetooth.sharedInstance().serviceUUIDString = "1808"
         Bluetooth.sharedInstance().allowDuplicates = false
         Bluetooth.sharedInstance().autoEnableNotifications = true // FIXME: should be configured or use delegate, not both
         Bluetooth.sharedInstance().bluetoothDelegate = self
@@ -490,7 +487,10 @@ public class Glucose : NSObject {
 
 extension Glucose: BluetoothProtocol {
     public func scanForGlucoseMeters() {
-        Bluetooth.sharedInstance().startScanning(self.allowDuplicates)
+        //ana change for thermometer is 1809
+        let serviceUUIDString = "1808"
+
+        Bluetooth.sharedInstance().startScanning(self.allowDuplicates, serviceUUIDString: serviceUUIDString)
         
         // FIXME: if start scanning should be called twice, then this requires a comment
         if(self.allowedToScanForPeripherals) {

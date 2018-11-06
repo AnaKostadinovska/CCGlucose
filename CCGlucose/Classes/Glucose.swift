@@ -79,9 +79,6 @@ public class Glucose : NSObject {
         }
     }
     
-    //public var serviceUUIDString:String = "1809"
-    //ana change for thermometer is 1809
-    public var serviceUUIDString:String = "1808"
     public var autoEnableNotifications:Bool = true
     public var allowDuplicates:Bool = false
     public var batteryProfileSupported:Bool = false
@@ -485,16 +482,16 @@ public class Glucose : NSObject {
     }
 }
 
+//ana change for thermometer is 1809
+let serviceUUIDString = "1808"
+
 extension Glucose: BluetoothProtocol {
     public func scanForGlucoseMeters() {
-        //ana change for thermometer is 1809
-        let serviceUUIDString = "1808"
-
         Bluetooth.sharedInstance().startScanning(self.allowDuplicates, serviceUUIDString: serviceUUIDString)
         
         // FIXME: if start scanning should be called twice, then this requires a comment
         if(self.allowedToScanForPeripherals) {
-            Bluetooth.sharedInstance().startScanning(self.allowDuplicates)
+            Bluetooth.sharedInstance().startScanning(self.allowDuplicates, serviceUUIDString: serviceUUIDString)
         }
     }
     
@@ -504,7 +501,7 @@ extension Glucose: BluetoothProtocol {
         if let peripheral = self.peripheral {
             Bluetooth.sharedInstance().connectPeripheral(peripheral)
         } else {
-            Bluetooth.sharedInstance().startScanning(self.allowDuplicates)
+            Bluetooth.sharedInstance().startScanning(self.allowDuplicates, serviceUUIDString: serviceUUIDString)
         }
     }
     
